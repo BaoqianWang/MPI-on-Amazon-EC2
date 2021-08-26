@@ -1,53 +1,81 @@
 
-# Evolutionary Population Curriculum for Scaling Multi-Agent Reinforcement Learning
+# Tutorials of Using MPI on Amazon EC2
 
-This is the code for implementing the MADDPG algorithm presented in the paper:
-[Evolutionary Population Curriculum for Scaling Multi-Agent Reinforcement Learning](https://openreview.net/forum?id=SJxbHkrKDH).
-It is configured to be run in conjunction with environments from the (https://github.com/qian18long/epciclr2020/tree/master/mpe_local).
-We show our gif results here (https://sites.google.com/view/epciclr2020/).
-Note: this codebase has been restructured since the original paper, and the results may
-vary from those reported in the paper.
+This is the tutorial of building a distributed computing system based on MPI and Amazon EC2. This tutorial contains instructions on configurations of Amazon EC2 computing instances, shell scripts to coordinate the distributed computing system and scripts for distributed matrix multiplication using MPI.
 
-## Installation
+## Instructions on configurations of Amazon EC2 computing instance
+Here are instructions to install MPI and mpi4py packages and configure the ssh service to enable communications between instances. You can also directly use public AMI image on Amazon EC2, which is ready to use. 
 
-<!-- - To install, `cd` into the root directory and type `pip install -e .` -->
-
-<!-- - Install dependencies: Python (3.5.4), OpenAI gym (0.10.5), tensorflow (1.8.0), numpy (1.14.5) -->
-
-<!-- - Use `requirements.txt` to install dependencies. -->
-
-- Install tensorflow 1.13.1
+### An ready-to-use public Amazon EC2 AMI
+Make sure to select area US East (Ohio) us-east-2
 
 ```
-pip install tensorflow==1.13.1
+AMI ID:  ami-08f358515eb338ca2
+
+owner:  753214619702
 ```
 
-- Install OpenAI gym
+### Steps to configure an Amazon EC2 instance
 
+- Install MPI
 ```
-pip install gym==0.13.0
-```
-
-- Install other dependencies
-
-```
-pip install joblib imageio
+sudo apt install openmpi-bin openmpi-dev openmpi-common openmpi-doc libopenmpi-dev
 ```
 
+- Install mpi4py
+```
+pip3 install mpi4py
+```
 
-## Case study: Multi-Agent Particle Environments
-
-We demonstrate here how the code can be used in conjunction with the(https://github.com/qian18long/epciclr2020/tree/master/mpe_local). It is based on(https://github.com/openai/multiagent-particle-envs)
-
-
-## Quick start
-
-- See `train_grassland_epc.sh`, `train_adversarial_epc.sh` and `train_food_collect_epc.sh` for the EPC algorithm for scenario `grassland`, `adversarial` and `food_collect` in the example setting presented in our paper.
+- Configure ssh to enable passwordless login between instances
 
 
-## Command-line options
+## Shell scripts for coordinating distributed computing systems
 
-### Environment options
+### Create instances and extract IP address information
+Create instances on the Amazon EC2 website to build a distributed computing system, which consists of a master node and multiple worker nodes. Copy the Amazon instances information into the file `amazon_instances_info`, for example:
+```
+–	i-0f7f74cf0420a75a3	c5n.large	52.15.165.68	2021/08/08 09:11 GMT-7
+–	i-003c00df228882bfd	c5n.large	18.218.185.168	2021/08/08 09:11 GMT-7
+–	i-062f6166ac671a077	c5n.large	52.15.88.70	2021/08/08 09:11 GMT-7
+```
+Here are three instances in total and let the first instance to be the master node and the rest two instances are worker nodes. We need the IP address information for communications. In the example above, 52.15.165.68 is the IP address of the master node. We run the following script to get IP addresses of all nodes and store it into the file `nodeIPaddress`
+```
+./get_ip_address.sh
+```
+or 
+```
+awk '{ print $4 }' amazon_instances_info > nodeIPaddress
+```
+which extracts strings of the 4th column of the file `amazon_instances_info` and store them in the file `nodeIPaddress`.
+
+
+
+### Login master node
+Run the scipt to login the master node
+```
+./login_master.sh 1
+```
+The index after the command indicates i-th node. In this case, '1' stands for the first node or master node. The content of the `login_master.sh`:
+```
+#!/usr/bin/ksh
+ARRAY=()
+while read LINE
+do
+    ARRAY+=("$LINE")
+done < nodeIPaddress
+ssh  -i ~/AmazonEC2/.ssh/linux_key_pari.pem ubuntu@${ARRAY[$1]}
+```
+in which `~/AmazonEC2/.ssh/linux_key_pari.pem` is the key pair permission generated and downloaded when you create an instance on Amazon EC2. In this case, the name of my key-pair is `linux_key_pari.pem` and placed in the directory `~/AmazonEC2/.ssh/`. You need to change it correspondingly based on your cases. You may also need to install `ksh` libraries using `apt-get install ksh` to run the script.
+
+### Run the MPI program in the master node
+The next step is to run the MPI program in the master node. Before running the MPI program, for example, `hcmm.py`. You need it to put the `hcmm.py` in the same directory of all nodes.  (You can use the shell script `transferFile.sh` to upload files from local host to Amazon EC2, which will be explained later.). Then you can run the script 
+```
+./run_mpi.sh
+```
+The file `nodeIPaddress` should be in the same directory with `run_mpi.sh` in the master node.
+
+### Helper scripts
 
 - `--scenario`: defines which environment in the MPE is to be used (default: `"grassland"`)
 
@@ -72,97 +100,4 @@ We demonstrate here how the code can be used in conjunction with the(https://git
 
 - `--adv-policy`: algorithm used for the adversary policies in the environment
 (default: `"maddpg"`; options: {`"att-maddpg"`, `"maddpg"`, `"PC"`, `"mean-field"`})
-
-### Core training parameters
-
-- `--lr`: learning rate (default: `1e-2`)
-
-- `--gamma`: discount factor (default: `0.95`)
-
-- `--batch-size`: batch size (default: `1024`)
-
-- `--num-units`: number of units in the MLP (default: `64`)
-
-- `--good-num-units`: number of units in the MLP of good agents, if not providing it will be num-units.
-
-- `--adv-num-units`: number of units in the MLP of adversarial agents, if not providing it will be num-units.
-
-- `--n_cpu_per_agent`: cpu usage per agent (default: `1`)
-
-- `--good-share-weights`: good agents share weights of the agents encoder within the model.
-
-- `--adv-share-weights`: adversarial agents share weights of the agents encoder within the model.
-
-- `--use-gpu`: Use GPU for training (default: `False`)
-
-- `--n-envs`: number of environments instances in parallelization
-
-### Checkpointing
-
-- `--save-dir`: directory where intermediate training results and model will be saved (default: `"/test/"`)
-
-- `--save-rate`: model is saved every time this number of episodes has been completed (default: `1000`)
-
-- `--load-dir`: directory where training state and model are loaded from (default: `"test"`)
-
-### Evaluation
-
-- `--restore`: restores previous training state stored in `load-dir` (or in `save-dir` if no `load-dir`
-has been provided), and continues training (default: `False`)
-
-- `--display`: displays to the screen the trained policy stored in `load-dir` (or in `save-dir` if no `load-dir`
-has been provided), but does not continue training (default: `False`)
-
-- `--save-gif-data`: Save the gif examples to the save-dir (default: `False`)
-
-- `--render-gif`: Render the gif in the load-dir (default: `False`)
-
-### EPC options
-
-- `--initial-population`: initial population size in the first stage
-
-- `--num-selection`: size of the population selected for reproduction
-
-- `--num-stages`: number of stages
-
-- `--stage-num-episodes`: number of training episodes in each stage
-
-- `--stage-n-envs`: number of environments instances in parallelization in each stage
-
-- `--test-num-episodes`: number of episodes for the competing
-
-## Example scripts
-
-- `.maddpg_o/experiments/train_normal.py`: apply the train_helpers.py for MADDPG, Att-MADDPG and mean-field training
-
-<!-- - `.maddpg_o/experiments/train_normal.py`: apply the population curriculum in train_helpers.py to add an agent in model of load_dir. -->
-
-- `.maddpg_o/experiments/train_x2.py`: apply a single step doubling training
-
-- `.maddpg_o/experiments/train_mix_match.py`: mix match of the good agents in `--sheep-init-load-dirs` and adversarial agents in '--wolf-init-load-dirs' for model agents evaluation.
-
-- `.maddpg_o/experiments/train_epc.py`: train the scheduled EPC algorithm.
-
-- `.maddpg_o/experiments/compete.py`: evaluate different models by competition
-
-<!-- - `./maddpg_o/maddpg_local/micro/maddpg.py`: core code for the MADDPG based algorithm -->
-
-<!-- - `./maddpg_o.experiments.train_helper.union_replay_buffer`: replay buffer code
-
-- `./maddpg_o/maddpg_local/common/distributions.py`: useful distributions used in `maddpg.py`
-
-- `./maddpg_o/maddpg_local/common/tf_util.py`: useful tensorflow functions used in `maddpg.py` -->
-
-
-
-
-## Paper citation
-
-```
-@inproceedings{epciclr2020,
-  author = {Qian Long and Zihan Zhou and Abhinav Gupta and Fei Fang and Yi Wu and Xiaolong Wang},
-  title = {Evolutionary Population Curriculum for Scaling Multi-Agent Reinforcement Learning},
-  booktitle = {International Conference on Learning Representations},
-  year = {2020}
-}
 ```
