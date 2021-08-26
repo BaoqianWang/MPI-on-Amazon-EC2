@@ -81,7 +81,10 @@ The file `nodeIPaddress` should be in the same directory with `run_mpi.sh` in th
 `./transfer.sh /home/smile/mpi_ec2/hcmm.py /home/ubuntu/mpi_ec2/` transfers file `/home/smile/mpi_ec2/hcmm.py` on the local host to the Amazon EC2 instance directory `/home/ubuntu/mpi_ec2/`.
 
 
-- `./download.sh`: 
-
+- `./download_file.sh`: download files from the Amazon EC2 instance to the local host, for example, the content of the `download_file.sh`:
 
 ```
+scp -i ~/AmazonEC2/.ssh/linux_key_pari.pem  ubuntu@3.21.125.28:/home/ubuntu/mpi_ec2/hcmm.py  /home/smile/mpi_ec2/
+
+```
+which downloads `hcmm.py` from the node with IP address `3.21.125.28` to the local directory `/home/smile/mpi_ec2/`.
