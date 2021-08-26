@@ -27,7 +27,14 @@ sudo apt install openmpi-bin openmpi-dev openmpi-common openmpi-doc libopenmpi-d
 pip3 install mpi4py
 ```
 
-- Configure ssh to enable passwordless login between instances
+- Configure ssh to enable passwordless login between instances:
+Please see this link as a reference : https://www.tecmint.com/ssh-passwordless-login-using-ssh-keygen-in-5-easy-steps/
+
+
+- Configure ssh to enable login without manually entering 'yes':
+Please see this link as a reference: https://unix.stackexchange.com/questions/33271/how-to-avoid-ssh-asking-permission
+
+After you configured the instance, you can commit the configurations and make an AMI for later usage.
 
 
 ## Shell scripts for coordinating distributed computing systems
