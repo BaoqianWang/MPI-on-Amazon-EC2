@@ -36,6 +36,10 @@ Please see this link as a reference: https://unix.stackexchange.com/questions/33
 
 After you configured the instance, you can commit the configurations and make an AMI for later usage.
 
+### Edit security groups:
+
+
+
 
 ## Shell scripts for coordinating distributed computing systems
 
