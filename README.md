@@ -77,27 +77,11 @@ The file `nodeIPaddress` should be in the same directory with `run_mpi.sh` in th
 
 ### Helper scripts
 
-- `--scenario`: defines which environment in the MPE is to be used (default: `"grassland"`)
+- `./transfer.sh`: transfer files from the local host to the node listed in the file `nodeIPaddress`, for example,
+`./transfer.sh /home/smile/mpi_ec2/hcmm.py /home/ubuntu/mpi_ec2/` transfers file `/home/smile/mpi_ec2/hcmm.py` on the local host to the Amazon EC2 instance directory `/home/ubuntu/mpi_ec2/`.
 
-- `--map-size`: The size of the environment. 1 if normal and 2 otherwise. (default: `"normal"`)
 
-- `--sight`: The agent's visibility radius. (default: `100`)
+- `./download.sh`: 
 
-- `--alpha`: Reward shared weight. (default: `0.0`)
 
-- `--max-episode-len` maximum length of each episode for the environment (default: `25`)
-
-- `--num-episodes` total number of training episodes (default: `200000`)
-
-- `--num-good`: number of good agents in the scenario (default: `2`)
-
-- `--num-adversaries`: number of adversaries in the environment (default: `2`)
-
-- `--num-food`: number of food(resources) in the scenario (default: `4`)
-
-- `--good-policy`: algorithm used for the 'good' (non adversary) policies in the environment
-(default: `"maddpg"`; options: {`"att-maddpg"`, `"maddpg"`, `"PC"`, `"mean-field"`})
-
-- `--adv-policy`: algorithm used for the adversary policies in the environment
-(default: `"maddpg"`; options: {`"att-maddpg"`, `"maddpg"`, `"PC"`, `"mean-field"`})
 ```
